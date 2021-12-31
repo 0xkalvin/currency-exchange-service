@@ -1,0 +1,43 @@
+version: '2.3'
+
+services:
+  dynamodb:
+    command: "-jar DynamoDBLocal.jar -inMemory -sharedDb"
+    image: "amazon/dynamodb-local:latest"
+    container_name: dynamodb
+    ports:
+      - "8000:8000"
+    volumes:
+      - "/home/dynamodblocal/data"
+    working_dir: /home/dynamodblocal
+
+  sqs:
+    container_name: sqs
+    image: roribio16/alpine-sqs
+    ports:
+      - "9324:9324"
+      - "9325:9325"
+    volumes:
+      - ./local-sqs.conf:/opt/config/elasticmq.conf
+
+  exchange-worker:
+    build:
+      context: ./exchange-worker
+      args:
+        - NODE_ENV=development
+    volumes:
+      - ./exchange-worker:/app
+      - /app/node_modules
+    env_file:
+      - ./exchange-worker/.env.example
+    container_name: exchange-worker
+    command: npm run start:exchange-worker
+    environment:
+      - APP_NAME=exchange_worker
+      - APP_TYPE=worker
+    depends_on:
+      dynamodb:
+        condition: service_started
+      sqs:
+        condition: service_started
+
