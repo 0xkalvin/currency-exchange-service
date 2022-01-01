@@ -1,6 +1,7 @@
 version: '2.3'
 
 services:
+  ################# INFRASTRUCTURE #################
   dynamodb:
     command: "-jar DynamoDBLocal.jar -inMemory -sharedDb"
     image: "amazon/dynamodb-local:latest"
@@ -19,6 +20,23 @@ services:
       - "9325:9325"
     volumes:
       - ./local-sqs.conf:/opt/config/elasticmq.conf
+
+  ################# APPLICATION #################
+  exchange-api:
+    container_name: exchange-api
+    build:
+      context: ./exchange-api
+      args:
+        - APP_NAME=server
+    env_file:
+      - ./exchange-api/.env.example
+    ports:
+      - "3000:3000"
+    depends_on:
+      dynamodb:
+        condition: service_started
+      sqs:
+        condition: service_started
 
   exchange-worker:
     build:

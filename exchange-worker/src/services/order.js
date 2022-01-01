@@ -99,6 +99,11 @@ async function createOrder(payload) {
 
   await movementRepository.enqueueMovements(movements);
 
+  logger.debug({
+    message: 'Order created successfully',
+    order_id: id,
+  })
+
   return order;
 }
 

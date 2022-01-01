@@ -6,8 +6,6 @@ default: infra all
 build:
 	@docker-compose build --no-cache
 
-all: worker
-
 infra:
 	@docker-compose up -d sqs dynamodb
 
@@ -17,6 +15,6 @@ down:
 test:
 	@docker-compose run --rm test
 
-worker:
+all:
 	@docker-compose run --rm exchange-worker npm run migrate
-	@docker-compose up exchange-worker
+	@docker-compose up exchange-worker exchange-api
