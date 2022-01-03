@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"exchange-api/entities"
 	"exchange-api/services"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -37,7 +36,6 @@ func (h OrderHandler) HandleOrder(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		h.CreateOrder(w, r)
 	} else {
-		fmt.Println(r.Method)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("Method not allowed"))
 

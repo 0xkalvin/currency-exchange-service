@@ -3,6 +3,7 @@ package repositories
 import (
 	"encoding/json"
 	"exchange-api/entities"
+	"exchange-api/utils/logger"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -19,6 +20,7 @@ type (
 	}
 )
 
+var log = logger.NewLogger()
 var sqsOrderCreationQueueURL = os.Getenv("SQS_ORDER_CREATION_QUEUE_URL")
 
 func NewOrderRepository(sqs *sqs.SQS) OrderRepositoryInterface {
@@ -46,6 +48,11 @@ func (r OrderRepository) CreateOrder(orderPayload *entities.Order) (*entities.Or
 	_, err = r.sqsClient.SendMessage(input)
 
 	if err != nil {
+		log.Error(map[string]interface{}{
+			"message":       "Failed to enqueue order into SQS",
+			"error_message": err.Error(),
+		})
+
 		return nil, err
 	}
 

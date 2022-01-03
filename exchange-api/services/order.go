@@ -3,7 +3,7 @@ package services
 import (
 	"exchange-api/entities"
 	"exchange-api/repositories"
-	"fmt"
+	"exchange-api/utils/logger"
 
 	"github.com/google/uuid"
 )
@@ -18,6 +18,8 @@ type (
 	}
 )
 
+var log = logger.NewLogger()
+
 func NewOrderService(r repositories.OrderRepositoryInterface) OrderServiceInterface {
 	return OrderService{
 		OrderRepository: r,
@@ -30,9 +32,13 @@ func (s OrderService) CreateOrder(orderPayload *entities.Order) (*entities.Order
 	order, err := s.OrderRepository.CreateOrder(orderPayload)
 
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
+
+	log.Debug(map[string]interface{}{
+		"message":  "Successfully created order",
+		"order_id": order.Id,
+	})
 
 	return order, nil
 }
