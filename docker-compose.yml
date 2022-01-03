@@ -30,6 +30,9 @@ services:
         - APP_NAME=server
     env_file:
       - ./exchange-api/.env.example
+    environment:
+      - APP_NAME=exchange_api
+      - APP_TYPE=server
     ports:
       - "3000:3000"
     depends_on:
