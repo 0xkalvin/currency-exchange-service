@@ -265,9 +265,8 @@ const migrations = [
       }));
 
       await fs.writeFile('order-creation.json', JSON.stringify({
-        amount: 10000,
+        amount: "10000",
         customer_id: '123',
-        id: '9999999',
         source_currency_id: brlID,
         target_currency_id: eurID,
       }, null, 2));

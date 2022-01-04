@@ -1,7 +1,6 @@
 {
-  "amount": 10000,
+  "amount": "10000",
   "customer_id": "123",
-  "id": "9999999",
-  "source_currency_id": "6ee302c9-75b2-4071-9d04-ed5383c4c9a6",
-  "target_currency_id": "115e51c5-7459-4256-a652-bbc7d9e16b73"
+  "source_currency_id": "83d6be8f-f085-4bfb-ad1c-833c1540ac6f",
+  "target_currency_id": "1c37de37-59a4-42e5-8dbc-287cb0c6452a"
 }

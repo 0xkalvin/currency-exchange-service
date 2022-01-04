@@ -10,7 +10,6 @@ const {
 module.exports = (name) => pino({
   name,
   level: LOG_LEVEL,
-  nestedKey: 'data',
   formatters: {
     level: (label) => ({ level: label }),
   },
