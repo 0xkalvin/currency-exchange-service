@@ -11,8 +11,10 @@ const kVisibilityTimeout = Symbol('kVisibilityTimeout');
 const kWaitTimeSeconds = Symbol('kWaitTimeSeconds');
 
 const kEachMessage = Symbol('kEachMessage');
+const kBeforePoll = Symbol('kBeforePoll');
 const kIsRunning = Symbol('kIsRunning');
 const kNumberOfInFligthMessages = Symbol('kNumberOfInFligthMessages');
+const kLastMessagesCount = Symbol('kLastMessagesCount');
 
 const kDeleteMessage = Symbol('kDeleteMessage');
 const kPoll = Symbol('kPoll');
@@ -79,7 +81,9 @@ class Poller extends EventEmitter {
 
     this[kIsRunning] = false;
     this[kEachMessage] = null;
+    this[kBeforePoll] = null;
     this[kNumberOfInFligthMessages] = 0;
+    this[kLastMessagesCount] = 0;
   }
 
   async [kReceiveMessage]() {
@@ -90,6 +94,8 @@ class Poller extends EventEmitter {
       VisibilityTimeout: this[kVisibilityTimeout],
       WaitTimeSeconds: this[kWaitTimeSeconds],
     });
+
+    this[kLastMessagesCount] = Messages.length;
 
     return Messages;
   }
@@ -104,6 +110,16 @@ class Poller extends EventEmitter {
   async [kPoll]() {
     if (!this[kIsRunning]) {
       return;
+    }
+
+    if (this[kBeforePoll]) {
+      try {
+        await this[kBeforePoll]();
+      } catch (error) {
+        this.emit('error', error);
+
+        return;
+      }
     }
 
     try {
@@ -129,9 +145,15 @@ class Poller extends EventEmitter {
     } catch (error) {
       this.emit('error', error);
     } finally {
-      setTimeout(() => {
-        this[kPoll]();
-      }, this[kPollingTimeout]);
+      if (this[kPollingTimeout] === 0) {
+        process.nextTick(() => {
+          this[kPoll]();
+        });
+      } else {
+        setTimeout(() => {
+          this[kPoll]();
+        }, this[kPollingTimeout]);
+      }
     }
   }
 
@@ -139,6 +161,7 @@ class Poller extends EventEmitter {
     const options = inputOptions || {};
 
     const {
+      beforePoll,
       eachMessage,
     } = options;
 
@@ -146,13 +169,26 @@ class Poller extends EventEmitter {
       throw new Error('eachMessage is a required option');
     }
 
+    if (typeof eachMessage !== 'function') {
+      throw new Error('eachMessage must be a function');
+    }
+
+    if (beforePoll && typeof beforePoll !== 'function') {
+      throw new Error('beforeEachPoll must be a function');
+    }
+
     this[kIsRunning] = true;
     this[kEachMessage] = eachMessage;
+    this[kBeforePoll] = beforePoll;
 
     return this[kPoll]();
   }
 
   stop() {
+    if (!this[kIsRunning]) {
+      return null;
+    }
+
     this[kIsRunning] = false;
 
     return Promise.race([
@@ -173,6 +209,14 @@ class Poller extends EventEmitter {
 
   get numberOfInFligthMessages() {
     return this[kNumberOfInFligthMessages];
+  }
+
+  get isRunning() {
+    return this[kIsRunning];
+  }
+
+  get lastMessagesCount() {
+    return this[kLastMessagesCount];
   }
 
   resume() {

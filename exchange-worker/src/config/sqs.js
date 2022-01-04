@@ -15,6 +15,10 @@ module.exports = {
       concurrency: process.env.SQS_CONCURRENCY,
       queueURL: process.env.SQS_ORDER_CREATION_QUEUE_URL,
       name: 'order-creation-queue',
+      rateLimit: {
+        duration: process.env.SQS_ORDER_CREATION_DURATION,
+        points: process.env.SQS_ORDER_CREATION_POINTS,
+      },
     },
     {
       concurrency: process.env.SQS_CONCURRENCY,

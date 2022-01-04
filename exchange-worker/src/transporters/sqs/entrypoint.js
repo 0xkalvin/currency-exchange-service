@@ -2,6 +2,7 @@ const timers = require('timers/promises');
 
 const {
   dynamodb,
+  redis,
   sqs,
 } = require('../../data-sources');
 const logger = require('../../utils/logger')('WORKER_ENTRYPOINT');
@@ -9,18 +10,31 @@ const sqsConfig = require('../../config/sqs');
 const SQSPoller = require('../../utils/sqs-poller');
 
 const { createMovement } = require('./workers/movement-creation');
-const { createOrder } = require('./workers/order-creation');
+const { createOrder, rateLimitCreateOrder } = require('./workers/order-creation');
 const { settleOrder } = require('./workers/order-settlement');
 
 const queueToWorkerMap = new Map([
-  ['movement-creation-queue', createMovement],
-  ['order-creation-queue', createOrder],
-  ['order-settlement-queue', settleOrder],
+  ['movement-creation-queue', {
+    eachMessage: createMovement,
+  }],
+  ['order-creation-queue', {
+    beforePoll: rateLimitCreateOrder,
+    eachMessage: createOrder,
+  }],
+  ['order-settlement-queue', {
+    eachMessage: settleOrder,
+  }],
 ]);
+
+const pollers = [];
+
+const {
+  LOG_LEVEL,
+} = process.env;
 
 async function gracefullyShutdown() {
   try {
-    await timers.setTimeout(5000);
+    await Promise.all(pollers.map((poller) => poller.stop()));
 
     logger.info({
       message: 'Cleanup has finished and process is about to shutdown',
@@ -41,6 +55,7 @@ async function run() {
   try {
     await Promise.all([
       dynamodb.checkConnection(),
+      redis.checkConnection(),
       sqs.checkConnection(),
     ]);
   } catch (error) {
@@ -52,6 +67,11 @@ async function run() {
 
     process.exit(1);
   }
+
+  logger.info({
+    message: 'Starting exchange worker',
+    worker_log_level: LOG_LEVEL,
+  });
 
   sqsConfig.workerQueues.forEach((queueConfig) => {
     const worker = queueToWorkerMap.get(queueConfig.name);
@@ -71,11 +91,12 @@ async function run() {
     });
 
     logger.info({
-      message: `Starting a worker for queue ${queueConfig.name}`,
+      message: `Creating a worker for queue ${queueConfig.name}`,
     });
 
     poller.start({
-      eachMessage: worker(queueConfig),
+      beforePoll: worker.beforePoll ? worker.beforePoll(poller, queueConfig) : null,
+      eachMessage: worker.eachMessage,
     });
 
     poller.on('error', (error) => {
@@ -86,6 +107,8 @@ async function run() {
         error_stack: error.stack,
       });
     });
+
+    pollers.push(poller);
   });
 
   process.once('SIGTERM', async () => {

@@ -102,7 +102,7 @@ async function createOrder(payload) {
   logger.debug({
     message: 'Order created successfully',
     order_id: id,
-  })
+  });
 
   return order;
 }

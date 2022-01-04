@@ -6,7 +6,11 @@ const {
 const logger = require('../utils/logger')('SQS_INDEX');
 const config = require('../config/sqs');
 
-const client = new SQS(config);
+const client = new SQS({
+  endpoint: config.endpoint,
+  maxRetries: config.maxRetries,
+  region: config.region,
+});
 
 async function checkConnection() {
   try {
