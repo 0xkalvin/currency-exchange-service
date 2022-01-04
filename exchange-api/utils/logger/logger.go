@@ -31,7 +31,11 @@ var defaultFields = logrus.Fields{
 func NewLogger() LoggerInterface {
 	engine := logrus.New()
 
-	engine.SetFormatter(&logrus.JSONFormatter{})
+	engine.SetFormatter(&logrus.JSONFormatter{
+		FieldMap: logrus.FieldMap{
+			logrus.FieldKeyMsg: "message",
+		},
+	})
 
 	level, _ := logrus.ParseLevel(LOG_LEVEL)
 
@@ -45,21 +49,31 @@ func NewLogger() LoggerInterface {
 }
 
 func (l Logger) Debug(args map[string]interface{}) {
-	l.Engine.WithFields(args).Debug(args["message"])
+	message := args["message"]
+	delete(args, "message")
+	l.Engine.WithFields(args).Debug(message)
 }
 
 func (l Logger) Error(args map[string]interface{}) {
-	l.Engine.WithFields(args).Error(args["message"])
+	message := args["message"]
+	delete(args, "message")
+	l.Engine.WithFields(args).Error(message)
 }
 
 func (l Logger) Fatal(args map[string]interface{}) {
-	l.Engine.WithFields(args).Fatal(args["message"])
+	message := args["message"]
+	delete(args, "message")
+	l.Engine.WithFields(args).Fatal(message)
 }
 
 func (l Logger) Info(args map[string]interface{}) {
-	l.Engine.WithFields(args).Info(args["message"])
+	message := args["message"]
+	delete(args, "message")
+	l.Engine.WithFields(args).Info(message)
 }
 
 func (l Logger) Warn(args map[string]interface{}) {
-	l.Engine.WithFields(args).Warn(args["message"])
+	message := args["message"]
+	delete(args, "message")
+	l.Engine.WithFields(args).Warn(message)
 }

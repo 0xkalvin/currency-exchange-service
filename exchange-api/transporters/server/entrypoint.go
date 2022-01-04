@@ -17,13 +17,13 @@ func main() {
 	sqs := datasources.BuildSQSClient()
 	log := logger.NewLogger()
 
-	setupHandlers(httpHandler, sqs)
+	handler := setupHandlers(httpHandler, sqs)
 
 	server := &http.Server{
 		Addr:         ":" + PORT,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
-		Handler:      httpHandler,
+		Handler:      handler,
 	}
 
 	log.Info(map[string]interface{}{
