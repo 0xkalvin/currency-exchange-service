@@ -7,7 +7,7 @@ build:
 	@docker-compose build --no-cache
 
 infra:
-	@docker-compose up -d sqs dynamodb
+	@docker-compose up -d sqs dynamodb redis
 
 down:
 	@docker-compose down --rmi local --remove-orphans

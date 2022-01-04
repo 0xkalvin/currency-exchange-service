@@ -12,6 +12,14 @@ services:
       - "/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
 
+  redis:
+    image: "redis:alpine"
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
+
   sqs:
     container_name: sqs
     image: roribio16/alpine-sqs
@@ -61,4 +69,5 @@ services:
         condition: service_started
       sqs:
         condition: service_started
-
+      redis:
+        condition: service_healthy
