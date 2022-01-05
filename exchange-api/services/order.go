@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"exchange-api/entities"
 	"exchange-api/repositories"
 	"exchange-api/utils/logger"
@@ -11,7 +12,7 @@ import (
 
 type (
 	OrderServiceInterface interface {
-		CreateOrder(orderPayload *CreateOrderSchema) (*entities.Order, error)
+		CreateOrder(ctx context.Context, orderPayload *CreateOrderSchema) (*entities.Order, error)
 	}
 
 	OrderService struct {
@@ -36,14 +37,14 @@ func NewOrderService(r repositories.OrderRepositoryInterface, v validators.Order
 	}
 }
 
-func (s OrderService) CreateOrder(orderPayload *CreateOrderSchema) (*entities.Order, error) {
+func (s OrderService) CreateOrder(ctx context.Context, orderPayload *CreateOrderSchema) (*entities.Order, error) {
 	err := s.Validator.Validate(orderPayload)
 
 	if err != nil {
 		return nil, err
 	}
 
-	order, err := s.OrderRepository.CreateOrder(&entities.Order{
+	order, err := s.OrderRepository.CreateOrder(ctx, &entities.Order{
 		Id:               uuid.New().String(),
 		Amount:           orderPayload.Amount,
 		CustomerId:       orderPayload.CustomerId,
@@ -56,8 +57,9 @@ func (s OrderService) CreateOrder(orderPayload *CreateOrderSchema) (*entities.Or
 	}
 
 	log.Debug(map[string]interface{}{
-		"message":  "Successfully created order",
-		"order_id": order.Id,
+		"message":    "Successfully created order",
+		"order_id":   order.Id,
+		"request_id": ctx.Value("requestId").(string),
 	})
 
 	return order, nil

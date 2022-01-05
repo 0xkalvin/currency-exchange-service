@@ -1,5 +1,6 @@
 const movementRepository = require('../repositories/movement');
 const orderRepository = require('../repositories/order');
+const logger = require('../utils/logger')('MOVEMENT_SERVICE');
 
 const exchangeIdentifier = 'CoolExchange';
 
@@ -28,6 +29,11 @@ async function createMovement(payloads) {
   await orderRepository.enqueueOrderToSettle({
     id: movements[0].source_id,
     targetStatus: 'settled',
+  });
+
+  logger.debug({
+    message: 'Movements created successfully',
+    order_id: movements[0].source_id,
   });
 
   return movements;

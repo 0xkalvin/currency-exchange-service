@@ -29,7 +29,7 @@ func (r *responseWriterWrapper) WriteHeader(statusCode int) {
 
 var log = logger.NewLogger()
 
-func HttpLogger(handler *http.ServeMux) http.Handler {
+func HttpLogger(handler http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
 
@@ -43,6 +43,7 @@ func HttpLogger(handler *http.ServeMux) http.Handler {
 		)
 
 		statusCode := wrappedResponseWriter.statusCode
+		requestId := r.Context().Value("requestId").(string)
 
 		data := map[string]interface{}{
 			"message":     "Request finished",
@@ -52,6 +53,7 @@ func HttpLogger(handler *http.ServeMux) http.Handler {
 			"status_code": statusCode,
 			"size":        wrappedResponseWriter.size,
 			"latency":     time.Since(startTime).Milliseconds(),
+			"request_id":  requestId,
 		}
 
 		if statusCode >= 400 && statusCode < 500 {
