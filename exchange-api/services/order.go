@@ -4,32 +4,52 @@ import (
 	"exchange-api/entities"
 	"exchange-api/repositories"
 	"exchange-api/utils/logger"
+	"exchange-api/validators"
 
 	"github.com/google/uuid"
 )
 
 type (
 	OrderServiceInterface interface {
-		CreateOrder(orderPayload *entities.Order) (*entities.Order, error)
+		CreateOrder(orderPayload *CreateOrderSchema) (*entities.Order, error)
 	}
 
 	OrderService struct {
 		OrderRepository repositories.OrderRepositoryInterface
+		Validator       validators.OrderValidatorInterface
+	}
+
+	CreateOrderSchema struct {
+		Amount           string `json:"amount" validate:"required"`
+		CustomerId       string `json:"customer_id" validate:"required"`
+		SourceCurrencyId string `json:"source_currency_id" validate:"required"`
+		TargetCurrencyId string `json:"target_currency_id" validate:"required"`
 	}
 )
 
 var log = logger.NewLogger()
 
-func NewOrderService(r repositories.OrderRepositoryInterface) OrderServiceInterface {
+func NewOrderService(r repositories.OrderRepositoryInterface, v validators.OrderValidatorInterface) OrderServiceInterface {
 	return OrderService{
 		OrderRepository: r,
+		Validator:       v,
 	}
 }
 
-func (s OrderService) CreateOrder(orderPayload *entities.Order) (*entities.Order, error) {
-	orderPayload.Id = uuid.New().String()
+func (s OrderService) CreateOrder(orderPayload *CreateOrderSchema) (*entities.Order, error) {
+	err := s.Validator.Validate(orderPayload)
 
-	order, err := s.OrderRepository.CreateOrder(orderPayload)
+	if err != nil {
+		return nil, err
+	}
+
+	order, err := s.OrderRepository.CreateOrder(&entities.Order{
+		Id:               uuid.New().String(),
+		Amount:           orderPayload.Amount,
+		CustomerId:       orderPayload.CustomerId,
+		SourceCurrencyId: orderPayload.SourceCurrencyId,
+		TargetCurrencyId: orderPayload.TargetCurrencyId,
+	})
 
 	if err != nil {
 		return nil, err

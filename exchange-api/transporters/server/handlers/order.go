@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	"exchange-api/entities"
 	"exchange-api/services"
+	"exchange-api/validators"
 	"io/ioutil"
 	"net/http"
 )
@@ -16,13 +16,6 @@ type (
 
 	OrderHandler struct {
 		OrderService services.OrderServiceInterface
-	}
-
-	CreateOrderSchema struct {
-		Amount           string `json:"amount"`
-		CustomerId       string `json:"customer_id"`
-		SourceCurrencyId string `json:"source_currency_id"`
-		TargetCurrencyId string `json:"target_currency_id"`
 	}
 )
 
@@ -51,9 +44,9 @@ func (h OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderPayload := CreateOrderSchema{}
+	orderPayload := &services.CreateOrderSchema{}
 
-	err = json.Unmarshal(body, &orderPayload)
+	err = json.Unmarshal(body, orderPayload)
 
 	if err != nil {
 		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
@@ -61,15 +54,25 @@ func (h OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdOrder, err := h.OrderService.CreateOrder(&entities.Order{
-		Amount:           orderPayload.Amount,
-		CustomerId:       orderPayload.CustomerId,
-		SourceCurrencyId: orderPayload.SourceCurrencyId,
-		TargetCurrencyId: orderPayload.TargetCurrencyId,
-	})
+	createdOrder, err := h.OrderService.CreateOrder(orderPayload)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		if _, ok := err.(*validators.OrderValidationError); ok {
+
+			response, _ := json.Marshal(map[string]interface{}{
+				"message": err.(*validators.OrderValidationError).Message,
+				"type":    "BadRequest",
+				"details": err.(*validators.OrderValidationError).Details,
+			})
+
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(response)
+
+		} else {
+
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 
 		return
 	}
