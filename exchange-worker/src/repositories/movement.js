@@ -1,5 +1,5 @@
-const { TransactWriteItemsCommand } = require('@aws-sdk/client-dynamodb');
-const { marshall } = require('@aws-sdk/util-dynamodb');
+const { GetItemCommand, TransactWriteItemsCommand } = require('@aws-sdk/client-dynamodb');
+const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb');
 
 const { dynamodb, sqs } = require('../data-sources');
 const errors = require('../utils/errors');
@@ -113,7 +113,32 @@ async function enqueueMovements(movements) {
   }
 }
 
+async function getBalance(ownerId, currencyId, type) {
+  try {
+    const pk = `BALANCE#${ownerId}#${currencyId}#${type}`;
+
+    const result = await dynamodb.client.send(new GetItemCommand({
+      TableName: BALANCE_TABLE,
+      Key: marshall({
+        pk,
+        sk: 'BALANCE',
+      }),
+    }));
+
+    return result.Item ? unmarshall(result.Item) : null;
+  } catch (error) {
+    logger.error({
+      message: 'Failed to find balance on dynamodb',
+      error_message: error.message,
+      error_stack: error.stack,
+    });
+
+    throw error;
+  }
+}
+
 module.exports = {
   createMovementsAndUpdateBalances,
   enqueueMovements,
+  getBalance,
 };

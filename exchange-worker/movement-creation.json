@@ -1,0 +1,25 @@
+[
+  {
+     "id":"b099de62-cb46-4d0a-87dd-3dc19a678222",
+     "amount":"-10",
+     "type":"exchange",
+     "currency_id":"e7261246-b284-4f0f-83fc-14f668bcc37c",
+     "owner_id":"123",
+     "source_id":"9508479b-c3b5-4785-a472-c2da48509c99"
+  },
+  {
+     "id":"4724a7a9-64e1-4970-9aa8-03d410201b2b",
+     "amount":"1.5524278722907591198966",
+     "type":"exchange",
+     "currency_id":"5b62bff1-b98c-47be-9d28-9be971aaa27f",
+     "owner_id":"123",
+     "source_id":"9508479b-c3b5-4785-a472-c2da48509c99"
+  },
+  {
+     "id":"7c44d1e5-7266-4cd6-892a-6de6753ad92f",
+     "amount":"0.0078011450868882367834",
+     "type":"fee",
+     "currency_id":"USD",
+     "source_id":"9508479b-c3b5-4785-a472-c2da48509c99"
+  }
+]
