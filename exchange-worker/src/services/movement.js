@@ -1,5 +1,6 @@
 const movementRepository = require('../repositories/movement');
 const orderRepository = require('../repositories/order');
+const errors = require('../utils/errors');
 const logger = require('../utils/logger')('MOVEMENT_SERVICE');
 
 const exchangeIdentifier = 'CoolExchange';
@@ -21,22 +22,31 @@ async function createMovement(payloads) {
     source_id: movement.source_id,
   }));
 
-  const movements = await movementRepository.createMovementsAndUpdateBalances(
-    movementsToCreate,
-    balanceUpdates,
-  );
+  let movements;
+  let orderTargetStatus = 'settled';
+
+  try {
+    movements = await movementRepository.createMovementsAndUpdateBalances(
+      movementsToCreate,
+      balanceUpdates,
+    );
+
+    logger.debug({
+      message: 'Movements created successfully',
+      order_id: movements[0].source_id,
+    });
+  } catch (error) {
+    if (error instanceof errors.InsufficientBalanceError) {
+      orderTargetStatus = 'failed';
+    } else {
+      throw error;
+    }
+  }
 
   await orderRepository.enqueueOrderToSettle({
-    id: movements[0].source_id,
-    targetStatus: 'settled',
+    id: movementsToCreate[0].source_id,
+    targetStatus: orderTargetStatus,
   });
-
-  logger.debug({
-    message: 'Movements created successfully',
-    order_id: movements[0].source_id,
-  });
-
-  return movements;
 }
 
 module.exports = {

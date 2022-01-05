@@ -74,7 +74,7 @@ async function createOrder(payload) {
   const movements = [
     {
       id: crypto.randomUUID(),
-      amount: sourceAmount,
+      amount: sourceAmount.negated().toString(),
       type: 'exchange',
       currency_id: sourceCurrencyId,
       owner_id: customerId,
@@ -82,7 +82,7 @@ async function createOrder(payload) {
     },
     {
       id: crypto.randomUUID(),
-      amount: targetAmount,
+      amount: targetAmount.toString(),
       type: 'exchange',
       currency_id: targetCurrencyId,
       owner_id: customerId,
@@ -90,7 +90,7 @@ async function createOrder(payload) {
     },
     {
       id: crypto.randomUUID(),
-      amount: feeAmount,
+      amount: feeAmount.toString(),
       type: 'fee',
       currency_id: baseCurrencyId,
       source_id: id,
@@ -140,6 +140,7 @@ async function settleOrder(payload) {
 
   logger.debug({
     message: 'Order settled successfully',
+    new_status: targetStatus,
     order_id: id,
   });
 

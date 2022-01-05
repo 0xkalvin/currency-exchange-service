@@ -225,7 +225,7 @@ const migrations = [
                     S: 'BALANCE',
                   },
                   amount: {
-                    N: '10',
+                    N: '10000',
                   },
                 },
               },
@@ -240,7 +240,7 @@ const migrations = [
                     S: 'BALANCE',
                   },
                   amount: {
-                    N: '10',
+                    N: '10000',
                   },
                 },
               },
@@ -255,7 +255,7 @@ const migrations = [
                     S: 'BALANCE',
                   },
                   amount: {
-                    N: '10',
+                    N: '10000',
                   },
                 },
               },
@@ -265,7 +265,7 @@ const migrations = [
       }));
 
       await fs.writeFile('order-creation.json', JSON.stringify({
-        amount: "10000",
+        amount: '10000',
         customer_id: '123',
         source_currency_id: brlID,
         target_currency_id: eurID,
