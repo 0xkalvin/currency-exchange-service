@@ -1,5 +1,7 @@
+const crypto = require('crypto');
 const { RateLimiterRedis, RateLimiterRes } = require('rate-limiter-flexible');
 
+const { context } = require('../../../utils/context');
 const { redis } = require('../../../data-sources');
 const orderService = require('../../../services/order');
 const logger = require('../../../utils/logger')('ORDER_CREATION_WORKER');
@@ -48,8 +50,27 @@ function rateLimitCreateOrder(poller, queueConfig) {
   };
 }
 
-async function createOrder(message) {
-  const payload = JSON.parse(message.Body);
+function createOrder(message) {
+  let payload;
+  let requestId;
+
+  try {
+    payload = JSON.parse(message.Body);
+
+    const sentRequestId = (message.MessageAttributes
+      && message.MessageAttributes['x-request-id']
+      && message.MessageAttributes['x-request-id'].StringValue);
+
+    requestId = sentRequestId || crypto.randomUUID();
+  } catch (error) {
+    return logger.error({
+      message: 'Failed to parse message content',
+      error_message: error.message,
+      error_stack: error.stack,
+    });
+  }
+
+  const store = new Map();
 
   const {
     amount,
@@ -59,13 +80,16 @@ async function createOrder(message) {
     target_currency_id: targetCurrencyId,
   } = payload;
 
-  await orderService.createOrder({
+  store.set('requestId', requestId);
+  store.set('customerId', customerId);
+
+  return context.run(store, () => orderService.createOrder({
     amount,
     customerId,
     id,
     sourceCurrencyId,
     targetCurrencyId,
-  });
+  }));
 }
 
 module.exports = {

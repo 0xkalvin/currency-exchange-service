@@ -138,6 +138,11 @@ async function settleOrder(payload) {
     targetStatus,
   });
 
+  logger.debug({
+    message: 'Order settled successfully',
+    order_id: id,
+  });
+
   return updatedOrder;
 }
 
