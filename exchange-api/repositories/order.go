@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"encoding/json"
 	"exchange-api/entities"
 	"exchange-api/utils/logger"
@@ -12,7 +13,7 @@ import (
 
 type (
 	OrderRepositoryInterface interface {
-		CreateOrder(orderPayload *entities.Order) (*entities.Order, error)
+		CreateOrder(ctx context.Context, orderPayload *entities.Order) (*entities.Order, error)
 	}
 
 	OrderRepository struct {
@@ -29,16 +30,24 @@ func NewOrderRepository(sqs *sqs.SQS) OrderRepositoryInterface {
 	}
 }
 
-func (r OrderRepository) CreateOrder(orderPayload *entities.Order) (*entities.Order, error) {
+func (r OrderRepository) CreateOrder(ctx context.Context, orderPayload *entities.Order) (*entities.Order, error) {
 	messageBody, err := json.Marshal(orderPayload)
 
 	if err != nil {
 		return nil, err
 	}
 
+	requestId := ctx.Value("requestId").(string)
+
 	input := &sqs.SendMessageInput{
 		MessageBody: aws.String(string(messageBody)),
-		QueueUrl:    aws.String(sqsOrderCreationQueueURL),
+		MessageAttributes: map[string]*sqs.MessageAttributeValue{
+			"x-request-id": {
+				DataType:    aws.String("String"),
+				StringValue: aws.String(requestId),
+			},
+		},
+		QueueUrl: aws.String(sqsOrderCreationQueueURL),
 	}
 
 	if err := input.Validate(); err != nil {
@@ -51,6 +60,7 @@ func (r OrderRepository) CreateOrder(orderPayload *entities.Order) (*entities.Or
 		log.Error(map[string]interface{}{
 			"message":       "Failed to enqueue order into SQS",
 			"error_message": err.Error(),
+			"request_id":    requestId,
 		})
 
 		return nil, err

@@ -54,7 +54,9 @@ func (h OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdOrder, err := h.OrderService.CreateOrder(orderPayload)
+	ctx := r.Context()
+
+	createdOrder, err := h.OrderService.CreateOrder(ctx, orderPayload)
 
 	if err != nil {
 		if _, ok := err.(*validators.OrderValidationError); ok {
