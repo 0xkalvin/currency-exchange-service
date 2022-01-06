@@ -8,20 +8,33 @@ import (
 	"exchange-api/validators"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
-func setupHandlers(h *http.ServeMux, sqs *sqs.SQS) http.Handler {
+func setupHandlers(h *http.ServeMux, sqs *sqs.SQS, dynamo *dynamodb.DynamoDB) http.Handler {
 	validator := validators.NewValidator()
 	orderRepository := repositories.NewOrderRepository(sqs)
 	orderService := services.NewOrderService(orderRepository, validator)
 	OrderHandler := handlers.NewOrderHandler(orderService)
+
+	exchangeRateRepository := repositories.NewExchangeRateRepository(dynamo)
+	exchangeRateService := services.NewExchangeRateService(exchangeRateRepository)
+	exchangeRateHandler := handlers.NewExchangeRateHandler(exchangeRateService)
 
 	h.HandleFunc(
 		"/orders",
 		middlewares.AddRequestId(
 			middlewares.HttpLogger(
 				OrderHandler.HandleOrder),
+		),
+	)
+
+	h.HandleFunc(
+		"/exchange_rates",
+		middlewares.AddRequestId(
+			middlewares.HttpLogger(
+				exchangeRateHandler.HandleExchangeRate),
 		),
 	)
 

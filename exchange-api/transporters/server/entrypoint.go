@@ -14,10 +14,11 @@ var LOG_LEVEL = os.Getenv("LOG_LEVEL")
 
 func main() {
 	httpHandler := http.NewServeMux()
+	dynamo := datasources.BuildDynamoDBClient()
 	sqs := datasources.BuildSQSClient()
 	log := logger.NewLogger()
 
-	handler := setupHandlers(httpHandler, sqs)
+	handler := setupHandlers(httpHandler, sqs, dynamo)
 
 	server := &http.Server{
 		Addr:         ":" + PORT,

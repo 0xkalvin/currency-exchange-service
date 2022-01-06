@@ -28,7 +28,7 @@ type (
 	}
 )
 
-var log = logger.NewLogger()
+var logOrder = logger.NewLogger()
 
 func NewOrderService(r repositories.OrderRepositoryInterface, v validators.OrderValidatorInterface) OrderServiceInterface {
 	return OrderService{
@@ -56,7 +56,7 @@ func (s OrderService) CreateOrder(ctx context.Context, orderPayload *CreateOrder
 		return nil, err
 	}
 
-	log.Debug(map[string]interface{}{
+	logOrder.Debug(map[string]interface{}{
 		"message":    "Successfully created order",
 		"order_id":   order.Id,
 		"request_id": ctx.Value("requestId").(string),

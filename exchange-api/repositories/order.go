@@ -21,7 +21,7 @@ type (
 	}
 )
 
-var log = logger.NewLogger()
+var logOrder = logger.NewLogger()
 var sqsOrderCreationQueueURL = os.Getenv("SQS_ORDER_CREATION_QUEUE_URL")
 
 func NewOrderRepository(sqs *sqs.SQS) OrderRepositoryInterface {
@@ -57,7 +57,7 @@ func (r OrderRepository) CreateOrder(ctx context.Context, orderPayload *entities
 	_, err = r.sqsClient.SendMessage(input)
 
 	if err != nil {
-		log.Error(map[string]interface{}{
+		logOrder.Error(map[string]interface{}{
 			"message":       "Failed to enqueue order into SQS",
 			"error_message": err.Error(),
 			"request_id":    requestId,
