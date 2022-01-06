@@ -108,7 +108,7 @@ async function createOrder(payload) {
 }
 
 async function settleOrder(payload) {
-  const { id, targetStatus } = payload;
+  const { customerId, id, targetStatus } = payload;
 
   const order = await orderRepository.findOrderById(id);
 
@@ -134,6 +134,7 @@ async function settleOrder(payload) {
   }
 
   const updatedOrder = await orderRepository.settleOrder({
+    customerId,
     id,
     targetStatus,
   });

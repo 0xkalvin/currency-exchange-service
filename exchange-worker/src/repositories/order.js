@@ -1,4 +1,6 @@
-const { GetItemCommand, PutItemCommand, UpdateItemCommand } = require('@aws-sdk/client-dynamodb');
+const {
+  GetItemCommand, TransactWriteItemsCommand,
+} = require('@aws-sdk/client-dynamodb');
 const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb');
 
 const { dynamodb, sqs } = require('../data-sources');
@@ -35,9 +37,38 @@ async function createOrder(payload) {
       item.schedule_date = scheduleDate;
     }
 
-    await dynamodb.client.send(new PutItemCommand({
-      TableName: EXCHANGE_TABLE,
-      Item: marshall(item),
+    await dynamodb.client.send(new TransactWriteItemsCommand({
+      TransactItems: [
+        {
+          Put: {
+            TableName: EXCHANGE_TABLE,
+            Item: marshall(item),
+            ConditionExpression: 'attribute_not_exists(#pk) AND attribute_not_exists(#sk)',
+            ExpressionAttributeNames: {
+              '#pk': 'pk',
+              '#sk': 'sk',
+            },
+          },
+        },
+        {
+          Update: {
+            TableName: EXCHANGE_TABLE,
+            Key: marshall({
+              pk: `${customerId}`,
+              sk: `${customerId}#ORDER_CUSTOMER#${status}`,
+            }),
+            UpdateExpression: 'SET #total = #total + :inc',
+            ExpressionAttributeValues: {
+              ':inc': {
+                N: 1,
+              },
+            },
+            ExpressionAttributeNames: {
+              '#total': 'total',
+            },
+          },
+        },
+      ],
     }));
   } catch (error) {
     logger.error({
@@ -52,6 +83,7 @@ async function createOrder(payload) {
 
 async function enqueueOrderToSettle(payload) {
   const {
+    customerId,
     id,
     targetStatus,
   } = payload;
@@ -60,6 +92,7 @@ async function enqueueOrderToSettle(payload) {
     await sqs.client.sendMessage({
       QueueUrl: sqsConfig.orderSettlementQueueURL,
       MessageBody: JSON.stringify({
+        customer_id: customerId,
         id,
         target_status: targetStatus,
       }),
@@ -100,23 +133,48 @@ async function findOrderById(id) {
 async function settleOrder(payload) {
   const {
     id,
+    customerId,
     targetStatus,
   } = payload;
 
   try {
-    await dynamodb.client.send(new UpdateItemCommand({
-      TableName: EXCHANGE_TABLE,
-      Key: marshall({
-        pk: id,
-        sk: 'ORDER',
-      }),
-      UpdateExpression: 'SET #currentStatus = :targetStatus',
-      ExpressionAttributeValues: marshall({
-        ':targetStatus': targetStatus,
-      }),
-      ExpressionAttributeNames: {
-        '#currentStatus': 'status',
-      },
+    await dynamodb.client.send(new TransactWriteItemsCommand({
+      TransactItems: [
+        {
+          Update: {
+            TableName: EXCHANGE_TABLE,
+            Key: marshall({
+              pk: id,
+              sk: 'ORDER',
+            }),
+            UpdateExpression: 'SET #currentStatus = :targetStatus',
+            ExpressionAttributeValues: marshall({
+              ':targetStatus': targetStatus,
+            }),
+            ExpressionAttributeNames: {
+              '#currentStatus': 'status',
+            },
+          },
+        },
+        {
+          Update: {
+            TableName: EXCHANGE_TABLE,
+            Key: marshall({
+              pk: `${customerId}`,
+              sk: `${customerId}#ORDER_CUSTOMER#${targetStatus}`,
+            }),
+            UpdateExpression: 'SET #total = #total + :inc',
+            ExpressionAttributeValues: {
+              ':inc': {
+                N: 1,
+              },
+            },
+            ExpressionAttributeNames: {
+              '#total': 'total',
+            },
+          },
+        },
+      ],
     }));
   } catch (error) {
     logger.error({

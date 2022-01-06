@@ -81,6 +81,7 @@ async function createMovement(payloads) {
   }
 
   await orderRepository.enqueueOrderToSettle({
+    customerId: movementsToCreate[0].owner_id,
     id: movementsToCreate[0].source_id,
     targetStatus: orderTargetStatus,
   });

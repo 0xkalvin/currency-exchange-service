@@ -160,6 +160,7 @@ const migrations = [
     run: async () => {
       const brlID = crypto.randomUUID();
       const eurID = crypto.randomUUID();
+      const customerId = '123';
 
       await dynamoClient.send(new BatchWriteItemCommand({
         RequestItems: {
@@ -212,20 +213,17 @@ const migrations = [
                 },
               },
             },
-
-          ],
-          [BALANCE_TABLE]: [
             {
               PutRequest: {
                 Item: {
                   pk: {
-                    S: `BALANCE#123#${eurID}#available`,
+                    S: `${customerId}`,
                   },
                   sk: {
-                    S: 'BALANCE',
+                    S: `${customerId}#ORDER_CUSTOMER#created`,
                   },
-                  amount: {
-                    N: '10000',
+                  total: {
+                    N: '0',
                   },
                 },
               },
@@ -234,13 +232,60 @@ const migrations = [
               PutRequest: {
                 Item: {
                   pk: {
-                    S: `BALANCE#123#${brlID}#available`,
+                    S: `${customerId}`,
+                  },
+                  sk: {
+                    S: `${customerId}#ORDER_CUSTOMER#settled`,
+                  },
+                  total: {
+                    N: '0',
+                  },
+                },
+              },
+            },
+            {
+              PutRequest: {
+                Item: {
+                  pk: {
+                    S: `${customerId}`,
+                  },
+                  sk: {
+                    S: `${customerId}#ORDER_CUSTOMER#failed`,
+                  },
+                  total: {
+                    N: '0',
+                  },
+                },
+              },
+            },
+          ],
+          [BALANCE_TABLE]: [
+            {
+              PutRequest: {
+                Item: {
+                  pk: {
+                    S: `BALANCE#${customerId}#${eurID}#available`,
                   },
                   sk: {
                     S: 'BALANCE',
                   },
                   amount: {
-                    N: '10000',
+                    N: '10000000000',
+                  },
+                },
+              },
+            },
+            {
+              PutRequest: {
+                Item: {
+                  pk: {
+                    S: `BALANCE#${customerId}#${brlID}#available`,
+                  },
+                  sk: {
+                    S: 'BALANCE',
+                  },
+                  amount: {
+                    N: '10000000000',
                   },
                 },
               },
