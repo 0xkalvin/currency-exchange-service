@@ -72,8 +72,31 @@ async function createMovementsAndUpdateBalances(movements, balanceUpdates) {
   }
 
   try {
+    const ownerId = movements[0].owner_id;
+    const movementType = movements[0].type;
+
     await dynamodb.client.send(new TransactWriteItemsCommand({
-      TransactItems: transactItems,
+      TransactItems: [
+        ...transactItems,
+        {
+          Update: {
+            TableName: BALANCE_TABLE,
+            Key: marshall({
+              pk: `${ownerId}`,
+              sk: `${ownerId}#MOVEMENT_OWNER#${movementType}`,
+            }),
+            UpdateExpression: 'SET #total = #total + :inc',
+            ExpressionAttributeValues: {
+              ':inc': {
+                N: 2,
+              },
+            },
+            ExpressionAttributeNames: {
+              '#total': 'total',
+            },
+          },
+        },
+      ],
     }));
 
     return movements;

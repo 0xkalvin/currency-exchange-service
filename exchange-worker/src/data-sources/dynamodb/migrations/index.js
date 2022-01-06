@@ -305,6 +305,21 @@ const migrations = [
                 },
               },
             },
+            {
+              PutRequest: {
+                Item: {
+                  pk: {
+                    S: `${customerId}`,
+                  },
+                  sk: {
+                    S: `${customerId}#MOVEMENT_OWNER#exchange`,
+                  },
+                  total: {
+                    N: '0',
+                  },
+                },
+              },
+            },
           ],
         },
       }));
