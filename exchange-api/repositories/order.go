@@ -6,27 +6,44 @@ import (
 	"exchange-api/entities"
 	"exchange-api/utils/logger"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
 type (
 	OrderRepositoryInterface interface {
 		CreateOrder(ctx context.Context, orderPayload *entities.Order) (*entities.Order, error)
+		GetOrdersDashboardByCustomer(ctx context.Context, customerId string) ([]*OrderStatusTotalItem, error)
 	}
 
 	OrderRepository struct {
-		sqsClient *sqs.SQS
+		sqsClient    *sqs.SQS
+		dynamoClient *dynamodb.DynamoDB
+	}
+
+	OrderCustomerItem struct {
+		Pk    string
+		Sk    string
+		Total string
+	}
+
+	OrderStatusTotalItem struct {
+		Status string
+		Total  string
 	}
 )
 
-var logOrder = logger.NewLogger()
+var orderLogger = logger.NewLogger()
 var sqsOrderCreationQueueURL = os.Getenv("SQS_ORDER_CREATION_QUEUE_URL")
 
-func NewOrderRepository(sqs *sqs.SQS) OrderRepositoryInterface {
+func NewOrderRepository(sqs *sqs.SQS, dynamoClient *dynamodb.DynamoDB) OrderRepositoryInterface {
 	return OrderRepository{
-		sqsClient: sqs,
+		sqsClient:    sqs,
+		dynamoClient: dynamoClient,
 	}
 }
 
@@ -57,7 +74,7 @@ func (r OrderRepository) CreateOrder(ctx context.Context, orderPayload *entities
 	_, err = r.sqsClient.SendMessage(input)
 
 	if err != nil {
-		logOrder.Error(map[string]interface{}{
+		orderLogger.Error(map[string]interface{}{
 			"message":       "Failed to enqueue order into SQS",
 			"error_message": err.Error(),
 			"request_id":    requestId,
@@ -67,4 +84,61 @@ func (r OrderRepository) CreateOrder(ctx context.Context, orderPayload *entities
 	}
 
 	return orderPayload, nil
+}
+
+func (r OrderRepository) GetOrdersDashboardByCustomer(ctx context.Context, customerId string) ([]*OrderStatusTotalItem, error) {
+	requestId := ctx.Value("requestId").(string)
+
+	output, err := r.dynamoClient.Query(&dynamodb.QueryInput{
+		TableName: aws.String(os.Getenv("EXCHANGE_TABLE")),
+		KeyConditions: map[string]*dynamodb.Condition{
+			"pk": {
+				AttributeValueList: []*dynamodb.AttributeValue{
+					{
+						S: aws.String(customerId),
+					},
+				},
+				ComparisonOperator: aws.String("EQ"),
+			},
+			"sk": {
+				AttributeValueList: []*dynamodb.AttributeValue{
+					{
+						S: aws.String(customerId),
+					},
+				},
+				ComparisonOperator: aws.String("BEGINS_WITH"),
+			},
+		},
+	})
+
+	if err != nil {
+		orderLogger.Error(map[string]interface{}{
+			"message":       "Failed to get order_customer entity in dynamodb",
+			"error_message": err.Error(),
+			"request_id":    requestId,
+		})
+
+		return nil, err
+	}
+
+	items := []OrderCustomerItem{}
+
+	err = dynamodbattribute.UnmarshalListOfMaps(output.Items, &items)
+
+	if err != nil {
+		return nil, err
+	}
+
+	responseItems := []*OrderStatusTotalItem{}
+
+	for _, item := range items {
+		status := strings.Split(item.Sk, "#")[2]
+
+		responseItems = append(responseItems, &OrderStatusTotalItem{
+			Status: status,
+			Total:  item.Total,
+		})
+	}
+
+	return responseItems, nil
 }

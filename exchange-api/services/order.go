@@ -13,6 +13,7 @@ import (
 type (
 	OrderServiceInterface interface {
 		CreateOrder(ctx context.Context, orderPayload *CreateOrderSchema) (*entities.Order, error)
+		GetOrdersDashboardByCustomer(ctx context.Context, customerId string) ([]*repositories.OrderStatusTotalItem, error)
 	}
 
 	OrderService struct {
@@ -63,4 +64,8 @@ func (s OrderService) CreateOrder(ctx context.Context, orderPayload *CreateOrder
 	})
 
 	return order, nil
+}
+
+func (s OrderService) GetOrdersDashboardByCustomer(ctx context.Context, customerId string) ([]*repositories.OrderStatusTotalItem, error) {
+	return s.OrderRepository.GetOrdersDashboardByCustomer(ctx, customerId)
 }

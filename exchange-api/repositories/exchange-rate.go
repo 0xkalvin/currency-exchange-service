@@ -20,7 +20,7 @@ type (
 	}
 )
 
-var logExchangeRate = logger.NewLogger()
+var exchangeRateLogger = logger.NewLogger()
 var exchangeTableName = os.Getenv("EXCHANGE_TABLE")
 
 func NewExchangeRateRepository(dynamo *dynamodb.DynamoDB) ExchangeRateRepositoryInterface {
@@ -59,7 +59,7 @@ func (r ExchangeRateRepository) CreateExchangeRate(ctx context.Context, exchange
 	_, err := r.dynamoClient.PutItem(input)
 
 	if err != nil {
-		logExchangeRate.Error(map[string]interface{}{
+		exchangeRateLogger.Error(map[string]interface{}{
 			"message":       "Failed to create exchange in dynamodb",
 			"error_message": err.Error(),
 			"request_id":    requestId,

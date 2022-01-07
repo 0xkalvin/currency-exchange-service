@@ -14,13 +14,17 @@ import (
 
 func setupHandlers(h *http.ServeMux, sqs *sqs.SQS, dynamo *dynamodb.DynamoDB) http.Handler {
 	validator := validators.NewValidator()
-	orderRepository := repositories.NewOrderRepository(sqs)
+	orderRepository := repositories.NewOrderRepository(sqs, dynamo)
 	orderService := services.NewOrderService(orderRepository, validator)
 	OrderHandler := handlers.NewOrderHandler(orderService)
 
 	exchangeRateRepository := repositories.NewExchangeRateRepository(dynamo)
 	exchangeRateService := services.NewExchangeRateService(exchangeRateRepository)
 	exchangeRateHandler := handlers.NewExchangeRateHandler(exchangeRateService)
+
+	balanceRepository := repositories.NewBalanceRepository(dynamo)
+	balanceService := services.NewBalanceService(balanceRepository)
+	balanceHandler := handlers.NewBalanceHandler(balanceService)
 
 	h.HandleFunc(
 		"/orders",
@@ -31,10 +35,26 @@ func setupHandlers(h *http.ServeMux, sqs *sqs.SQS, dynamo *dynamodb.DynamoDB) ht
 	)
 
 	h.HandleFunc(
+		"/orders/dashboard",
+		middlewares.AddRequestId(
+			middlewares.HttpLogger(
+				OrderHandler.GetOrdersDashboardByCustomer),
+		),
+	)
+
+	h.HandleFunc(
 		"/exchange_rates",
 		middlewares.AddRequestId(
 			middlewares.HttpLogger(
 				exchangeRateHandler.HandleExchangeRate),
+		),
+	)
+
+	h.HandleFunc(
+		"/movements/dashboard",
+		middlewares.AddRequestId(
+			middlewares.HttpLogger(
+				balanceHandler.GetMovementsDashboardByCustomer),
 		),
 	)
 

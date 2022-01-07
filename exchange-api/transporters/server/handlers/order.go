@@ -12,6 +12,7 @@ type (
 	OrderHandlerInterface interface {
 		HandleOrder(w http.ResponseWriter, r *http.Request)
 		CreateOrder(w http.ResponseWriter, r *http.Request)
+		GetOrdersDashboardByCustomer(w http.ResponseWriter, r *http.Request)
 	}
 
 	OrderHandler struct {
@@ -90,4 +91,44 @@ func (h OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
+}
+
+func (h OrderHandler) GetOrdersDashboardByCustomer(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Method not allowed"))
+
+		return
+	}
+
+	ctx := r.Context()
+	customerId := r.Header.Get("x-customer-id")
+
+	if customerId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Customer id is required"))
+
+		return
+	}
+
+	result, err := h.OrderService.GetOrdersDashboardByCustomer(ctx, customerId)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	response, err := json.Marshal(result)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
+
 }
