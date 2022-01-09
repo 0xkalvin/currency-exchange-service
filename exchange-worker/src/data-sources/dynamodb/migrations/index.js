@@ -272,6 +272,12 @@ const migrations = [
                   amount: {
                     N: '10000000000',
                   },
+                  owner_id: {
+                    S: `${customerId}`,
+                  },
+                  currency_id: {
+                    S: `${eurID}`,
+                  },
                 },
               },
             },
@@ -287,6 +293,12 @@ const migrations = [
                   amount: {
                     N: '10000000000',
                   },
+                  owner_id: {
+                    S: `${customerId}`,
+                  },
+                  currency_id: {
+                    S: `${brlID}`,
+                  },
                 },
               },
             },
@@ -301,6 +313,12 @@ const migrations = [
                   },
                   amount: {
                     N: '10000',
+                  },
+                  owner_id: {
+                    S: 'CoolExchange',
+                  },
+                  currency_id: {
+                    S: 'USD',
                   },
                 },
               },
