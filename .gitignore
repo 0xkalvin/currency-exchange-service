@@ -145,3 +145,4 @@ terraform.rc
 
 # Ignore plans
 plan.apply
+plan
