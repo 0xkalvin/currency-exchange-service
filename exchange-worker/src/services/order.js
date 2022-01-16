@@ -74,7 +74,7 @@ async function createOrder(payload) {
   const movements = [
     {
       id: crypto.randomUUID(),
-      amount: sourceAmount.negated().toString(),
+      amount: sourceAmount.negated().toFixed(0).toString(),
       type: 'exchange',
       currency_id: sourceCurrencyId,
       owner_id: customerId,
@@ -82,7 +82,7 @@ async function createOrder(payload) {
     },
     {
       id: crypto.randomUUID(),
-      amount: targetAmount.toString(),
+      amount: targetAmount.toFixed(0).toString(),
       type: 'exchange',
       currency_id: targetCurrencyId,
       owner_id: customerId,
@@ -90,7 +90,7 @@ async function createOrder(payload) {
     },
     {
       id: crypto.randomUUID(),
-      amount: feeAmount.toString(),
+      amount: feeAmount.toFixed(0).toString(),
       type: 'fee',
       currency_id: baseCurrencyId,
       source_id: id,

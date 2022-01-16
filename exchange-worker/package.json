@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "migrate": "node src/data-sources/dynamodb/migrations/index.js",
+    "prestart:exchange-worker": "npm run migrate",
     "start:exchange-worker": "nodemon src/transporters/sqs/entrypoint.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
