@@ -4,8 +4,6 @@ const {
   CreateTableCommand,
   DynamoDBClient,
 } = require('@aws-sdk/client-dynamodb');
-const crypto = require('crypto');
-const fs = require('fs/promises');
 
 const logger = require('../../../utils/logger')('MIGRATIONS');
 
@@ -96,6 +94,10 @@ const migrations = [
         },
       };
 
+      if (NODE_ENV === 'production') {
+        return Promise.resolve();
+      }
+
       return dynamoClient.send(new CreateTableCommand(params));
     },
   },
@@ -152,15 +154,19 @@ const migrations = [
         },
       };
 
+      if (NODE_ENV === 'production') {
+        return Promise.resolve();
+      }
+
       return dynamoClient.send(new CreateTableCommand(params));
     },
   },
   {
     name: 'insert-exchange-rates',
     run: async () => {
-      const brlID = crypto.randomUUID();
-      const eurID = crypto.randomUUID();
       const customerId = '123';
+      const brlCurrencyId = 'BRL';
+      const eurCurrencyId = 'EUR';
 
       await dynamoClient.send(new BatchWriteItemCommand({
         RequestItems: {
@@ -169,7 +175,7 @@ const migrations = [
               PutRequest: {
                 Item: {
                   pk: {
-                    S: brlID,
+                    S: brlCurrencyId,
                   },
                   sk: {
                     S: 'EXCHANGE_RATE',
@@ -193,7 +199,7 @@ const migrations = [
               PutRequest: {
                 Item: {
                   pk: {
-                    S: eurID,
+                    S: eurCurrencyId,
                   },
                   sk: {
                     S: 'EXCHANGE_RATE',
@@ -264,13 +270,19 @@ const migrations = [
               PutRequest: {
                 Item: {
                   pk: {
-                    S: `BALANCE#${customerId}#${eurID}#available`,
+                    S: `${customerId}#EUR#available`,
                   },
                   sk: {
                     S: 'BALANCE',
                   },
                   amount: {
                     N: '10000000000',
+                  },
+                  owner_id: {
+                    S: `${customerId}`,
+                  },
+                  currency_id: {
+                    S: 'EUR',
                   },
                 },
               },
@@ -279,13 +291,19 @@ const migrations = [
               PutRequest: {
                 Item: {
                   pk: {
-                    S: `BALANCE#${customerId}#${brlID}#available`,
+                    S: `${customerId}#BRL#available`,
                   },
                   sk: {
                     S: 'BALANCE',
                   },
                   amount: {
                     N: '10000000000',
+                  },
+                  owner_id: {
+                    S: `${customerId}`,
+                  },
+                  currency_id: {
+                    S: 'BRL',
                   },
                 },
               },
@@ -294,13 +312,19 @@ const migrations = [
               PutRequest: {
                 Item: {
                   pk: {
-                    S: 'BALANCE#CoolExchange#USD#available',
+                    S: 'CoolExchange#USD#available',
                   },
                   sk: {
                     S: 'BALANCE',
                   },
                   amount: {
                     N: '10000',
+                  },
+                  owner_id: {
+                    S: 'CoolExchange',
+                  },
+                  currency_id: {
+                    S: 'USD',
                   },
                 },
               },
@@ -323,20 +347,11 @@ const migrations = [
           ],
         },
       }));
-
-      await fs.writeFile('order-creation.json', JSON.stringify({
-        amount: '10000',
-        customer_id: '123',
-        source_currency_id: brlID,
-        target_currency_id: eurID,
-      }, null, 2));
     },
   },
 ];
 
 const run = async () => {
-  if (NODE_ENV !== 'development') return;
-
   for (const migration of migrations) {
     try {
       logger.info({

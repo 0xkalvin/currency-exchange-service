@@ -64,7 +64,9 @@ func (r OrderRepository) CreateOrder(ctx context.Context, orderPayload *entities
 				StringValue: aws.String(requestId),
 			},
 		},
-		QueueUrl: aws.String(sqsOrderCreationQueueURL),
+		QueueUrl:               aws.String(sqsOrderCreationQueueURL),
+		MessageGroupId:         aws.String(orderPayload.CustomerId),
+		MessageDeduplicationId: aws.String(orderPayload.Id),
 	}
 
 	if err := input.Validate(); err != nil {

@@ -25,7 +25,7 @@ async function createMovementsAndUpdateBalances(movements, balanceUpdates) {
       Update: {
         TableName: BALANCE_TABLE,
         Key: marshall({
-          pk: `BALANCE#${balanceOwnerId}#${balanceCurrencyId}#${balanceType}`,
+          pk: `${balanceOwnerId}#${balanceCurrencyId}#${balanceType}`,
           sk: 'BALANCE',
         }),
         UpdateExpression: 'SET amount = amount + :increment',
@@ -88,7 +88,7 @@ async function createMovementsAndUpdateBalances(movements, balanceUpdates) {
             UpdateExpression: 'SET #total = #total + :inc',
             ExpressionAttributeValues: {
               ':inc': {
-                N: 2,
+                N: '2',
               },
             },
             ExpressionAttributeNames: {
@@ -138,7 +138,7 @@ async function enqueueMovements(movements) {
 
 async function getBalance(ownerId, currencyId, type) {
   try {
-    const pk = `BALANCE#${ownerId}#${currencyId}#${type}`;
+    const pk = `${ownerId}#${currencyId}#${type}`;
 
     const result = await dynamodb.client.send(new GetItemCommand({
       TableName: BALANCE_TABLE,
