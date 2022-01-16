@@ -88,7 +88,7 @@ async function createMovementsAndUpdateBalances(movements, balanceUpdates) {
             UpdateExpression: 'SET #total = #total + :inc',
             ExpressionAttributeValues: {
               ':inc': {
-                N: 2,
+                N: '2',
               },
             },
             ExpressionAttributeNames: {

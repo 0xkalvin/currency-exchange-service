@@ -60,7 +60,7 @@ async function createOrder(payload) {
             UpdateExpression: 'SET #total = #total + :inc',
             ExpressionAttributeValues: {
               ':inc': {
-                N: 1,
+                N: '1',
               },
             },
             ExpressionAttributeNames: {
@@ -96,6 +96,8 @@ async function enqueueOrderToSettle(payload) {
         id,
         target_status: targetStatus,
       }),
+      MessageGroupId: customerId,
+      MessageDeduplicationId: id,
     });
   } catch (error) {
     logger.error({
@@ -166,7 +168,7 @@ async function settleOrder(payload) {
             UpdateExpression: 'SET #total = #total + :inc',
             ExpressionAttributeValues: {
               ':inc': {
-                N: 1,
+                N: '1',
               },
             },
             ExpressionAttributeNames: {
