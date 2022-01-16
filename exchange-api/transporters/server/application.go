@@ -58,6 +58,14 @@ func setupHandlers(h *http.ServeMux, sqs *sqs.SQS, dynamo *dynamodb.DynamoDB) ht
 		),
 	)
 
+	h.HandleFunc(
+		"/balances",
+		middlewares.AddRequestId(
+			middlewares.HttpLogger(
+				balanceHandler.GetBalanceByCustomer),
+		),
+	)
+
 	h.HandleFunc("/__health_check__", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Server is up and kicking"))

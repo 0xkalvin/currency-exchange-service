@@ -8,6 +8,7 @@ import (
 type (
 	BalanceServiceInterface interface {
 		GetMovementsDashboardByCustomer(ctx context.Context, customerId string) ([]*repositories.MovementTypeTotalItem, error)
+		GetBalanceByCustomer(ctx context.Context, customerId string) ([]*repositories.BalanceResponseItem, error)
 	}
 
 	BalanceService struct {
@@ -23,4 +24,8 @@ func NewBalanceService(r repositories.BalanceRepositoryInterface) BalanceService
 
 func (s BalanceService) GetMovementsDashboardByCustomer(ctx context.Context, customerId string) ([]*repositories.MovementTypeTotalItem, error) {
 	return s.BalanceRepository.GetMovementsDashboardByCustomer(ctx, customerId)
+}
+
+func (s BalanceService) GetBalanceByCustomer(ctx context.Context, customerId string) ([]*repositories.BalanceResponseItem, error) {
+	return s.BalanceRepository.GetBalanceByCustomer(ctx, customerId)
 }

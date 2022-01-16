@@ -9,6 +9,7 @@ import (
 type (
 	BalanceHandlerInterface interface {
 		GetMovementsDashboardByCustomer(w http.ResponseWriter, r *http.Request)
+		GetBalanceByCustomer(w http.ResponseWriter, r *http.Request)
 	}
 
 	BalanceHandler struct {
@@ -59,5 +60,43 @@ func (h BalanceHandler) GetMovementsDashboardByCustomer(w http.ResponseWriter, r
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
+}
 
+func (h BalanceHandler) GetBalanceByCustomer(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Method not allowed"))
+
+		return
+	}
+
+	ctx := r.Context()
+	customerId := r.Header.Get("x-customer-id")
+
+	if customerId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Customer id is required"))
+
+		return
+	}
+
+	result, err := h.BalanceService.GetBalanceByCustomer(ctx, customerId)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	response, err := json.Marshal(result)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(response)
 }
